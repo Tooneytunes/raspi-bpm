@@ -1,31 +1,37 @@
+import threading
+import sys
 import sounddevice as sd
-from scipy.io.wavfile import write
 from bpm_detection import bpm_detector
-import numpy as np
-from scipy.stats import mode
-
-fs = 44100  # Sample rate
-seconds = 3 # Duration of recording
-log_size = 5 # Number of previous measurements used
 
 
+class BPM:
 
-log = np.zeros(log_size)
-last_printed = 0.0
+    def __init__(self):
+        self.bpm = 0.0
+        self.recording_thread = threading.Thread(target=self.calculate_bpm,
+                                                 daemon=True)
 
-while True:
-    myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
-    sd.wait()  # Wait until recording is finished
+    def calculate_bpm(self, fs=44100, seconds=3):
+        myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
+        sd.wait()  # Wait until recording is finished
+        local_bpm, _ = bpm_detector(myrecording[:, 0], fs)
+        try:
+            local_bpm = local_bpm[0]
+        except IndexError:
+            return
+        self.bpm = round(local_bpm, 1)
 
-    bpm, correl = bpm_detector(myrecording[:,0], fs)
-    try:
-        bpm = bpm[0]
-    except:
-        bpm = 0.0
+    def try_recording(self):
+        if not self.recording_thread.is_alive():
+            self.recording_thread = threading.Thread(target=self.calculate_bpm)
+            self.recording_thread.start()
 
-    bpm = round(bpm, 3)
-    log = np.append(log[1:],bpm)
+    def run(self):
+        while True:
+            self.try_recording()
+            sys.stdout.flush()
+            sys.stdout.write('\r' + str(self.bpm))
 
-    bpm, count = mode(log)
-    bpm = bpm[0]
-    print(bpm)
+
+if __name__ == "__main__":
+    BPM().run()
