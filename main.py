@@ -44,7 +44,7 @@ class BPM:
         while True:
             self.try_recording()
             sys.stdout.flush()
-            sys.stdout.write('\r' + str(self.bpm))
+            sys.stdout.write('\r' + str(self.log))
 
 
 if __name__ == "__main__":
