@@ -8,8 +8,7 @@ class BPM:
 
     def __init__(self):
         self.bpm = 0.0
-        self.recording_thread = threading.Thread(target=self.calculate_bpm,
-                                                 daemon=True)
+        self.recording_thread = None
 
     def calculate_bpm(self, fs=44100, seconds=3):
         myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
@@ -22,7 +21,8 @@ class BPM:
         self.bpm = round(local_bpm, 1)
 
     def try_recording(self):
-        if not self.recording_thread.is_alive():
+        thread = self.recording_thread
+        if thread is None or not thread.is_alive():
             self.recording_thread = threading.Thread(target=self.calculate_bpm)
             self.recording_thread.start()
 
