@@ -1,5 +1,7 @@
 import threading
 import sys
+
+import pygame
 import sounddevice as sd
 import numpy as np
 from scipy.stats import mode
@@ -41,10 +43,32 @@ class BPM:
         self.log = np.append(self.log[1:], new_value)
 
     def run(self):
+        pygame.init()
+
+        window_size = width, height = 480, 320
+        pygame.display.set_caption('BPM Detector')
+        display = pygame.display.set_mode(window_size)
+        font = pygame.font.Font('freesansbold.ttf', 160)
+
         while True:
             self.try_recording()
             sys.stdout.flush()
             sys.stdout.write('\r' + str(self.log))
+
+            text = font.render(str(self.bpm), True, (255, 0, 0))
+            text_rect = text.get_rect()
+
+            text_rect.center = (width // 2, height // 2)
+
+            display.fill((0, 0, 0))
+            display.blit(text, text_rect)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+            
+            pygame.display.update()
 
 
 if __name__ == "__main__":
